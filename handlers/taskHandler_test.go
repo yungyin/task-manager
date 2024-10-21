@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"net/http"
 	"net/http/httptest"
+	"task-manager/datastore"
 	"task-manager/models"
 	"testing"
 )
@@ -150,6 +151,108 @@ func TestTasksHandler_CreateTask_InternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	handler.CreateTask(recorder, request)
+
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_UpdateTask_Success(t *testing.T) {
+	inputId := "7494d1aa-21f1-4003-8504-70602e167839"
+	inputTask := models.Task{
+		Name: "Task 1", Status: models.Complete,
+	}
+
+	mockStore := new(MockStore)
+	mockTask := models.Task{
+		Id: inputId, Name: "Task 1", Status: models.Complete,
+	}
+	mockStore.On("Update", mock.Anything, mock.Anything).Return(mockTask, nil)
+
+	mockPath := "/v1/tasks/" + inputId
+	body, _ := json.Marshal(inputTask)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPut, mockPath, bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.UpdateTask(recorder, request)
+
+	assert.Equal(t, http.StatusOK, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+
+	var task models.Task
+	err := json.Unmarshal(recorder.Body.Bytes(), &task)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mockTask, task)
+}
+
+func TestTasksHandler_UpdateTask_GivenInvalidStatus_BadRequestError(t *testing.T) {
+	task := models.Task{
+		Name: "Task 1", Status: -1,
+	}
+	body, _ := json.Marshal(task)
+
+	mockStore := new(MockStore)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPut, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.UpdateTask(recorder, request)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_UpdateTask_GivenMalformedTaskId_NotFoundError(t *testing.T) {
+	task := models.Task{
+		Name: "Task 1", Status: models.Incomplete,
+	}
+	body, _ := json.Marshal(task)
+
+	mockStore := new(MockStore)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPut, "/v1/tasks/malformedId", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.UpdateTask(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_UpdateTask_GivenNonExistedTaskId_NotFoundError(t *testing.T) {
+	task := models.Task{
+		Name: "Task 1", Status: models.Complete,
+	}
+	body, _ := json.Marshal(task)
+
+	mockStore := new(MockStore)
+	mockStore.On("Update", mock.Anything, mock.Anything).Return(models.Task{}, datastore.NotFoundError)
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPut, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.UpdateTask(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_UpdateTask_InternalServerError(t *testing.T) {
+	task := models.Task{
+		Name: "Task 1", Status: models.Complete,
+	}
+	body, _ := json.Marshal(task)
+
+	mockStore := new(MockStore)
+	mockStore.On("Update", mock.Anything, mock.Anything).Return(models.Task{}, errors.New("store error"))
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPut, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.UpdateTask(recorder, request)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
