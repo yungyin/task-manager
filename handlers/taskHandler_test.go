@@ -45,7 +45,7 @@ func TestTasksHandler_ListTasks_Success(t *testing.T) {
 	mockStore.On("List").Return(mockTaskList, nil)
 
 	handler := NewTasksHandler(mockStore)
-	request := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)
 	recorder := httptest.NewRecorder()
 
 	handler.ListTasks(recorder, request)
@@ -60,12 +60,23 @@ func TestTasksHandler_ListTasks_Success(t *testing.T) {
 	assert.Equal(t, mockTaskList, taskList)
 }
 
+func TestTasksHandler_ListTasks_GivenInvalidPath_NotFoundError(t *testing.T) {
+	handler := NewTasksHandler(nil)
+	request := httptest.NewRequest(http.MethodGet, "/invalid", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.ListTasks(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
 func TestTasksHandler_ListTasks_InternalServerError(t *testing.T) {
 	mockStore := new(MockStore)
 	mockStore.On("List").Return([]models.Task{}, errors.New("store error"))
 
 	handler := NewTasksHandler(mockStore)
-	request := httptest.NewRequest(http.MethodGet, "/tasks", nil)
+	request := httptest.NewRequest(http.MethodGet, "/v1/tasks", nil)
 	recorder := httptest.NewRecorder()
 
 	handler.ListTasks(recorder, request)
@@ -83,7 +94,7 @@ func TestTasksHandler_CreateTask_Success(t *testing.T) {
 
 	body, _ := json.Marshal(mockTask)
 	handler := NewTasksHandler(mockStore)
-	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	request := httptest.NewRequest(http.MethodPost, "/v1/tasks", bytes.NewBuffer(body))
 	recorder := httptest.NewRecorder()
 
 	handler.CreateTask(recorder, request)
@@ -98,6 +109,17 @@ func TestTasksHandler_CreateTask_Success(t *testing.T) {
 	assert.Equal(t, mockTask, task)
 }
 
+func TestTasksHandler_CreateTask_GivenInvalidPath_NotFoundError(t *testing.T) {
+	handler := NewTasksHandler(nil)
+	request := httptest.NewRequest(http.MethodGet, "/invalid", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.CreateTask(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
 func TestTasksHandler_CreateTask_BadRequestError(t *testing.T) {
 	mockStore := new(MockStore)
 	mockTask := models.Task{
@@ -106,7 +128,7 @@ func TestTasksHandler_CreateTask_BadRequestError(t *testing.T) {
 
 	body, _ := json.Marshal(mockTask)
 	handler := NewTasksHandler(mockStore)
-	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	request := httptest.NewRequest(http.MethodPost, "/v1/tasks", bytes.NewBuffer(body))
 	recorder := httptest.NewRecorder()
 
 	handler.CreateTask(recorder, request)
@@ -124,7 +146,7 @@ func TestTasksHandler_CreateTask_InternalServerError(t *testing.T) {
 
 	body, _ := json.Marshal(mockTask)
 	handler := NewTasksHandler(mockStore)
-	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	request := httptest.NewRequest(http.MethodPost, "/v1/tasks", bytes.NewBuffer(body))
 	recorder := httptest.NewRecorder()
 
 	handler.CreateTask(recorder, request)

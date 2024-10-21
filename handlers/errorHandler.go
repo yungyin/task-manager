@@ -22,11 +22,21 @@ func BadRequestErrorHandler(w http.ResponseWriter, r *http.Request) {
 		Message: "The request could not be read properly",
 	}
 
-	e := json.NewEncoder(w).Encode(response)
-	if e != nil {
-		http.Error(w, "Failed to encode response", http.StatusInternalServerError)
-		return
+	json.NewEncoder(w).Encode(response)
+}
+
+func NotFoundErrorHandler(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Not Found Error: %v", r)
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusNotFound)
+
+	response := ErrorResponse{
+		Error:   "not_found_error",
+		Message: "The requested resource was not found.",
 	}
+
+	json.NewEncoder(w).Encode(response)
 }
 
 func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
