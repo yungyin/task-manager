@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"github.com/stretchr/testify/assert"
@@ -68,6 +69,65 @@ func TestTasksHandler_ListTasks_InternalServerError(t *testing.T) {
 	recorder := httptest.NewRecorder()
 
 	handler.ListTasks(recorder, request)
+
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_CreateTask_Success(t *testing.T) {
+	mockStore := new(MockStore)
+	mockTask := models.Task{
+		Name: "Task 1", Status: models.Incomplete,
+	}
+	mockStore.On("Create", mock.Anything).Return(mockTask, nil)
+
+	body, _ := json.Marshal(mockTask)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.CreateTask(recorder, request)
+
+	assert.Equal(t, http.StatusCreated, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+
+	var task models.Task
+	err := json.Unmarshal(recorder.Body.Bytes(), &task)
+	assert.NoError(t, err)
+
+	assert.Equal(t, mockTask, task)
+}
+
+func TestTasksHandler_CreateTask_BadRequestError(t *testing.T) {
+	mockStore := new(MockStore)
+	mockTask := models.Task{
+		Name: "Task 1", Status: -1,
+	}
+
+	body, _ := json.Marshal(mockTask)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.CreateTask(recorder, request)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_CreateTask_InternalServerError(t *testing.T) {
+	mockStore := new(MockStore)
+	mockTask := models.Task{
+		Name: "Task 1", Status: models.Incomplete,
+	}
+	mockStore.On("Create", mock.Anything).Return(models.Task{}, errors.New("store error"))
+
+	body, _ := json.Marshal(mockTask)
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodPost, "/tasks", bytes.NewBuffer(body))
+	recorder := httptest.NewRecorder()
+
+	handler.CreateTask(recorder, request)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))

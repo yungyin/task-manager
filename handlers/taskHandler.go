@@ -33,6 +33,9 @@ func (h *TasksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	case r.Method == http.MethodGet && TaskRegex.MatchString(r.URL.Path):
 		h.ListTasks(w, r)
 		return
+	case r.Method == http.MethodPost && TaskRegex.MatchString(r.URL.Path):
+		h.CreateTask(w, r)
+		return
 	default:
 		return
 	}
@@ -48,4 +51,23 @@ func (h *TasksHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(taskList)
+}
+
+func (h *TasksHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
+	var task models.Task
+	err := json.NewDecoder(r.Body).Decode(&task)
+	if err != nil || task.Name == "" || (task.Status != models.Incomplete && task.Status != models.Complete) {
+		BadRequestErrorHandler(w, r)
+		return
+	}
+
+	createdTask, err := h.store.Create(task)
+	if err != nil {
+		InternalServerErrorHandler(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(createdTask)
 }

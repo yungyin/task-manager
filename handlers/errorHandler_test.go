@@ -7,6 +7,16 @@ import (
 	"testing"
 )
 
+func TestBadRequestErrorHandler(t *testing.T) {
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	recorder := httptest.NewRecorder()
+
+	BadRequestErrorHandler(recorder, request)
+
+	assert.Equal(t, http.StatusBadRequest, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
 func TestInternalServerErrorHandler(t *testing.T) {
 	request := httptest.NewRequest(http.MethodGet, "/", nil)
 	recorder := httptest.NewRecorder()
