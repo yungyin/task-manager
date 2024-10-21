@@ -257,3 +257,58 @@ func TestTasksHandler_UpdateTask_InternalServerError(t *testing.T) {
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
 }
+
+func TestTasksHandler_DeleteTask_Success(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStore.On("Delete", mock.Anything).Return(nil)
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodDelete, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.DeleteTask(recorder, request)
+
+	assert.Equal(t, http.StatusNoContent, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_DeleteTask_GivenMalformedTaskId_NotFoundError(t *testing.T) {
+	mockStore := new(MockStore)
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodDelete, "/v1/tasks/invalid", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.DeleteTask(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_DeleteTask_GivenNonExistedTaskId_NotFoundError(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStore.On("Delete", mock.Anything).Return(datastore.NotFoundError)
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodDelete, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.DeleteTask(recorder, request)
+
+	assert.Equal(t, http.StatusNotFound, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
+
+func TestTasksHandler_DeleteTask_InternalServerError(t *testing.T) {
+	mockStore := new(MockStore)
+	mockStore.On("Delete", mock.Anything).Return(errors.New("store error"))
+
+	handler := NewTasksHandler(mockStore)
+	request := httptest.NewRequest(http.MethodDelete, "/v1/tasks/7494d1aa-21f1-4003-8504-70602e167839", nil)
+	recorder := httptest.NewRecorder()
+
+	handler.DeleteTask(recorder, request)
+
+	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
+	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+}
