@@ -82,3 +82,8 @@ Content-Type: application/json
 HTTP/1.1 204 No Content
 Content-Type: application/json
 ```
+
+## Run API in Docker
+1. Build the Docker image: `docker build -t go-crud-api .`
+2. Run the Docker container: `docker run -p 8080:8080 go-crud-api`
+3. Verify API is Running: `curl http://localhost:8080/v1/tasks`
