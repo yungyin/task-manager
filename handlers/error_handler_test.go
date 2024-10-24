@@ -14,7 +14,7 @@ func TestBadRequestErrorHandler(t *testing.T) {
 	BadRequestErrorHandler(recorder, request)
 
 	assert.Equal(t, http.StatusBadRequest, recorder.Code)
-	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+	assert.Equal(t, JsonContentType, recorder.Header().Get(ContentType))
 }
 
 func TestNotFoundErrorHandler(t *testing.T) {
@@ -24,7 +24,7 @@ func TestNotFoundErrorHandler(t *testing.T) {
 	NotFoundErrorHandler(recorder, request)
 
 	assert.Equal(t, http.StatusNotFound, recorder.Code)
-	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+	assert.Equal(t, JsonContentType, recorder.Header().Get(ContentType))
 }
 
 func TestInternalServerErrorHandler(t *testing.T) {
@@ -35,5 +35,5 @@ func TestInternalServerErrorHandler(t *testing.T) {
 	InternalServerErrorHandler(recorder, request, err)
 
 	assert.Equal(t, http.StatusInternalServerError, recorder.Code)
-	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
+	assert.Equal(t, JsonContentType, recorder.Header().Get(ContentType))
 }

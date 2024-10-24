@@ -6,6 +6,11 @@ import (
 	"testing"
 )
 
+const (
+	nonExistedId = "0"
+	existedId    = "1"
+)
+
 var memStore = MemStore{
 	taskMap: map[string]models.Task{
 		"1": {Id: "1", Name: "Task 1", Status: models.Incomplete},
@@ -13,9 +18,6 @@ var memStore = MemStore{
 	},
 }
 var inputTask = models.Task{Name: "name", Status: models.Complete}
-
-const nonExistedId = "0"
-const existedId = "1"
 
 func TestNewMemStore(t *testing.T) {
 	store := NewMemStore()

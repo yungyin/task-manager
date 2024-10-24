@@ -9,6 +9,11 @@ import (
 	"task-manager/models"
 )
 
+const (
+	ContentType     = "Content-Type"
+	JsonContentType = "application/json"
+)
+
 var (
 	TaskRegex       = regexp.MustCompile(`^/v1/tasks$`)
 	TaskRegexWithId = regexp.MustCompile(`^/v1/tasks/([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$`)
@@ -31,42 +36,42 @@ type TasksStore interface {
 	Delete(taskId string) error
 }
 
-func (h *TasksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (handler *TasksHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case r.Method == http.MethodGet:
-		h.ListTasks(w, r)
+		handler.ListTasks(w, r)
 		return
 	case r.Method == http.MethodPost:
-		h.CreateTask(w, r)
+		handler.CreateTask(w, r)
 		return
 	case r.Method == http.MethodPut:
-		h.UpdateTask(w, r)
+		handler.UpdateTask(w, r)
 		return
 	case r.Method == http.MethodDelete:
-		h.DeleteTask(w, r)
+		handler.DeleteTask(w, r)
 	default:
 		return
 	}
 }
 
-func (h *TasksHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
+func (handler *TasksHandler) ListTasks(w http.ResponseWriter, r *http.Request) {
 	if !TaskRegex.MatchString(r.URL.Path) {
 		NotFoundErrorHandler(w, r)
 		return
 	}
 
-	taskList, err := h.store.List()
+	taskList, err := handler.store.List()
 	if err != nil {
 		InternalServerErrorHandler(w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(taskList)
 }
 
-func (h *TasksHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
+func (handler *TasksHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 	if !TaskRegex.MatchString(r.URL.Path) {
 		NotFoundErrorHandler(w, r)
 		return
@@ -79,18 +84,18 @@ func (h *TasksHandler) CreateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	createdTask, err := h.store.Create(task)
+	createdTask, err := handler.store.Create(task)
 	if err != nil {
 		InternalServerErrorHandler(w, r, err)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(createdTask)
 }
 
-func (h *TasksHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
+func (handler *TasksHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 	taskId := extractTaskId(r)
 	if taskId == "" {
 		NotFoundErrorHandler(w, r)
@@ -104,7 +109,7 @@ func (h *TasksHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	updatedTask, err := h.store.Update(taskId, task)
+	updatedTask, err := handler.store.Update(taskId, task)
 	if err != nil {
 		if errors.Is(err, datastore.NotFoundError) {
 			NotFoundErrorHandler(w, r)
@@ -114,19 +119,19 @@ func (h *TasksHandler) UpdateTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusOK)
 	json.NewEncoder(w).Encode(updatedTask)
 }
 
-func (h *TasksHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
+func (handler *TasksHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 	taskId := extractTaskId(r)
 	if taskId == "" {
 		NotFoundErrorHandler(w, r)
 		return
 	}
 
-	err := h.store.Delete(taskId)
+	err := handler.store.Delete(taskId)
 	if err != nil {
 		if errors.Is(err, datastore.NotFoundError) {
 			NotFoundErrorHandler(w, r)
@@ -136,7 +141,7 @@ func (h *TasksHandler) DeleteTask(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusNoContent)
 }
 

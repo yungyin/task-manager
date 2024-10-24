@@ -14,7 +14,7 @@ type ErrorResponse struct {
 func BadRequestErrorHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Bad Request Error: %v", r)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusBadRequest)
 
 	response := ErrorResponse{
@@ -28,7 +28,7 @@ func BadRequestErrorHandler(w http.ResponseWriter, r *http.Request) {
 func NotFoundErrorHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Not Found Error: %v", r)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusNotFound)
 
 	response := ErrorResponse{
@@ -42,7 +42,7 @@ func NotFoundErrorHandler(w http.ResponseWriter, r *http.Request) {
 func InternalServerErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	log.Printf("Internal Server Error: %v", err)
 
-	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set(ContentType, JsonContentType)
 	w.WriteHeader(http.StatusInternalServerError)
 
 	response := ErrorResponse{
